@@ -1,5 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { CRM_FIELDS, ALLOWED_CRM_STATUS, ALLOWED_DATA_SOURCE } from "../config/constants.js";
+import {
+  CRM_FIELDS,
+  ALLOWED_CRM_STATUS,
+  ALLOWED_DATA_SOURCE,
+} from "../config/constants.js";
 import { chunkRows } from "./csvParser.service.js";
 import { sanitizeBatch } from "./validator.service.js";
 
@@ -73,27 +77,43 @@ function buildUserPrompt(rows) {
 
 function extractJsonArray(text) {
   const trimmed = text.trim();
-  const cleaned = trimmed.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "");
+  const cleaned = trimmed
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/i, "");
   const start = cleaned.indexOf("[");
   const end = cleaned.lastIndexOf("]");
-  if (start === -1 || end === -1) throw new Error("AI response did not contain a JSON array");
+  if (start === -1 || end === -1)
+    throw new Error("AI response did not contain a JSON array");
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
 async function callAnthropic(rows) {
-  if (!anthropic) throw new Error("ANTHROPIC_API_KEY is not configured on the server");
+  if (!anthropic)
+    throw new Error("ANTHROPIC_API_KEY is not configured on the server");
   const response = await anthropic.messages.create({
     model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6",
     max_tokens: 4096,
     system: buildSystemPrompt(),
     messages: [{ role: "user", content: buildUserPrompt(rows) }],
   });
-  const text = response.content.map((b) => (b.type === "text" ? b.text : "")).join("\n");
+  const text = response.content
+    .map((b) => (b.type === "text" ? b.text : ""))
+    .join("\n");
   return extractJsonArray(text);
 }
 
-async function callOpenAICompatible({ baseUrl, apiKey, model, providerLabel, rows }) {
-  if (!apiKey) throw new Error(`API key for ${providerLabel} is not configured on the server`);
+async function callOpenAICompatible({
+  baseUrl,
+  apiKey,
+  model,
+  providerLabel,
+  rows,
+}) {
+  if (!apiKey)
+    throw new Error(
+      `API key for ${providerLabel} is not configured on the server`,
+    );
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
@@ -107,10 +127,13 @@ async function callOpenAICompatible({ baseUrl, apiKey, model, providerLabel, row
         { role: "user", content: buildUserPrompt(rows) },
       ],
       temperature: 0,
-      response_format: { type: "json_object" },
     }),
   });
-  if (!res.ok) throw new Error(`${providerLabel} API error: ${res.status} ${await res.text()}`);
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error(`${providerLabel} API Error:`, errorText);
+    throw new Error(`${providerLabel} API error: ${res.status} ${errorText}`);
+  }
   const data = await res.json();
   const content = data.choices[0].message.content;
   // Some providers (Groq incl.) require response_format to wrap the array
@@ -119,8 +142,11 @@ async function callOpenAICompatible({ baseUrl, apiKey, model, providerLabel, row
     return extractJsonArray(content);
   } catch {
     const parsed = JSON.parse(content);
-    const arr = Array.isArray(parsed) ? parsed : Object.values(parsed).find(Array.isArray);
-    if (!arr) throw new Error(`${providerLabel} response did not contain a JSON array`);
+    const arr = Array.isArray(parsed)
+      ? parsed
+      : Object.values(parsed).find(Array.isArray);
+    if (!arr)
+      throw new Error(`${providerLabel} response did not contain a JSON array`);
     return arr;
   }
 }
@@ -147,7 +173,8 @@ async function callGroq(rows) {
 
 async function callGemini(rows) {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured on the server");
+  if (!apiKey)
+    throw new Error("GEMINI_API_KEY is not configured on the server");
   const model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -155,14 +182,22 @@ async function callGemini(rows) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${buildSystemPrompt()}\n\n${buildUserPrompt(rows)}` }] }],
+        contents: [
+          {
+            parts: [
+              { text: `${buildSystemPrompt()}\n\n${buildUserPrompt(rows)}` },
+            ],
+          },
+        ],
         generationConfig: { temperature: 0 },
       }),
-    }
+    },
   );
-  if (!res.ok) throw new Error(`Gemini API error: ${res.status} ${await res.text()}`);
+  if (!res.ok)
+    throw new Error(`Gemini API error: ${res.status} ${await res.text()}`);
   const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join("\n") || "";
+  const text =
+    data.candidates?.[0]?.content?.parts?.map((p) => p.text).join("\n") || "";
   return extractJsonArray(text);
 }
 
@@ -185,20 +220,29 @@ async function processBatchWithRetry(rows, batchIndex, onProgress) {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const rawRecords = await callProvider(rows);
-      if (!Array.isArray(rawRecords)) throw new Error("AI response was not a JSON array");
+      if (!Array.isArray(rawRecords))
+        throw new Error("AI response was not a JSON array");
       const { successful, skipped } = sanitizeBatch(rawRecords, rows);
       onProgress?.({ batchIndex, status: "done", attempt, count: rows.length });
       return { successful, skipped, batchIndex };
     } catch (err) {
       lastError = err;
-      onProgress?.({ batchIndex, status: "retrying", attempt, error: err.message });
+      onProgress?.({
+        batchIndex,
+        status: "retrying",
+        attempt,
+        error: err.message,
+      });
     }
   }
   // All retries exhausted — skip the whole batch rather than fail the request.
   onProgress?.({ batchIndex, status: "failed", error: lastError?.message });
   return {
     successful: [],
-    skipped: rows.map((row) => ({ reason: `AI extraction failed: ${lastError?.message}`, source_row: row })),
+    skipped: rows.map((row) => ({
+      reason: `AI extraction failed: ${lastError?.message}`,
+      source_row: row,
+    })),
     batchIndex,
   };
 }
