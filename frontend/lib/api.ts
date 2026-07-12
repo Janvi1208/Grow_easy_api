@@ -1,6 +1,6 @@
 import type { ImportResponse } from "./types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://grow-easy-api.onrender.com";
 
 export async function importCsvFile(file: File): Promise<ImportResponse> {
   const formData = new FormData();

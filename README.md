@@ -34,7 +34,7 @@ cd backend
 cp .env.example .env
 # edit .env and set AI_PROVIDER + the matching API key
 npm install
-npm run dev        # starts on http://localhost:8080
+npm run dev        # starts onhttps://grow-easy-api.onrender.com
 ```
 
 `.env` options:

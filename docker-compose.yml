@@ -14,6 +14,6 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+      - NEXT_PUBLIC_API_BASE_URL=https://grow-easy-api.onrender.com
     depends_on:
       - backend
