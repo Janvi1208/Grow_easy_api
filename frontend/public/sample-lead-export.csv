@@ -1,0 +1,6 @@
+Lead Date,Full Name,Contact Email,Alt Email,Phone,Alt Phone,Organisation,Town,Region,Nation,Owner,Status,Remarks,Project,Notes
+13/05/2026 14:20,John Doe,john.doe@example.com,john.d.alt@example.com,+91 9876543210,9123456780,GrowEasy,Mumbai,Maharashtra,India,test@gmail.com,Interested - follow up,Client wants to reschedule the demo call,Meridian Tower,3BHK budget around 1.2 Cr
+13/05/2026 14:25,Sarah Johnson,sarah.johnson@example.com,,9876543211,,Tech Solutions,Bangalore,Karnataka,India,test@gmail.com,Could not reach,"Person was busy, will try again next week",Eden Park,
+13/05/2026 14:30,Rajesh Patel,,9876543212,,,Startup Inc,Delhi,Delhi,India,test@gmail.com,Not interested,Not interested in our services,,
+13/05/2026 14:35,Priya Singh,priya.singh@example.com,,9876543213,,Enterprise Corp,Pune,Maharashtra,India,test@gmail.com,Deal closed,"Deal closed, onboarding in progress",Sarjapur Plots,Ready to move in 6 months
+,No Contact Person,,,,,Ghost Leads Ltd,,,,,,,,Row with no email or phone - should be skipped

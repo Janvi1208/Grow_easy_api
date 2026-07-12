@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Sora", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f7f6f3;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(20, 23, 31, 0.05) 1px, transparent 0);
+  background-size: 22px 22px;
+  color: #14171f;
+}
+
+::selection {
+  background-color: #ffe3d8;
+  color: #14171f;
+}
+
+/* Custom scrollbar for data tables */
+.crm-scroll::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.crm-scroll::-webkit-scrollbar-track {
+  background: #f0efe9;
+}
+.crm-scroll::-webkit-scrollbar-thumb {
+  background: #d8d5cc;
+  border-radius: 999px;
+}
+.crm-scroll::-webkit-scrollbar-thumb:hover {
+  background: #c2beb2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  outline: 2px solid #ff6b45;
+  outline-offset: 2px;
+}
